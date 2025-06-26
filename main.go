@@ -5,7 +5,7 @@ import "github.com/hajimehoshi/ebiten/v2"
 func main() {
 	sm := NewSceneManager()
 	ebiten.SetWindowResizingMode(ebiten.WindowResizingModeEnabled)
-	ebiten.SetWindowTitle("Defender")
+	ebiten.SetWindowTitle("Defend")
 	ebiten.SetWindowSize(640, 480)
 
 	err := ebiten.RunGame(sm)
