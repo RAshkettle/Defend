@@ -41,8 +41,6 @@ func NewTerrain(screenWidth float64) *Terrain {
 	}
 }
 
-
-
 func (t *Terrain) Draw(screen *ebiten.Image, camera *Camera) {
 	screenWidth := float64(screen.Bounds().Dx())
 	screenHeight := float64(screen.Bounds().Dy())
@@ -55,9 +53,9 @@ func (t *Terrain) Draw(screen *ebiten.Image, camera *Camera) {
 		cameraX -= t.width
 	}
 
-	pointSpacing := 5.0
+	pointSpacing := 5.
 
-	for screenX := 0.0; screenX < screenWidth; screenX += pointSpacing {
+	for screenX := 0.; screenX < screenWidth; screenX += pointSpacing {
 		worldX := screenX + cameraX
 
 		for worldX >= t.width {

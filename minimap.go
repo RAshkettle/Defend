@@ -21,7 +21,7 @@ type Minimap struct {
 
 func NewMinimap(terrain *Terrain, camera *Camera, screenWidth, screenHeight int) *Minimap {
 	minimapWidth := screenWidth / 3
-	minimapHeight := 30
+	minimapHeight := 20
 	minimapX := (screenWidth - minimapWidth) / 2
 	minimapY := 5
 
@@ -32,34 +32,36 @@ func NewMinimap(terrain *Terrain, camera *Camera, screenWidth, screenHeight int)
 		height:        minimapHeight,
 		posX:          minimapX,
 		posY:          minimapY,
-		terrainColor:  color.RGBA{255, 140, 0, 255},
-		viewportColor: color.RGBA{255, 255, 255, 255},
-		borderColor:   color.RGBA{0, 0, 255, 255},
+		terrainColor:  color.RGBA{255, 140, 0, 255},   // Orange terrain
+		viewportColor: color.RGBA{255, 255, 255, 255}, // White viewport indicator
+		borderColor:   color.RGBA{0, 0, 255, 255},     // Blue border
 	}
 }
 
-func (m *Minimap) drawBorder(screen *ebiten.Image) {
+func (m *Minimap) Draw(screen *ebiten.Image) {
+	// Draw blue border around minimap
 	vector.StrokeLine(screen, float32(m.posX), float32(m.posY), float32(m.posX+m.width), float32(m.posY), 1, m.borderColor, false)
 	vector.StrokeLine(screen, float32(m.posX), float32(m.posY+m.height), float32(m.posX+m.width), float32(m.posY+m.height), 1, m.borderColor, false)
 	vector.StrokeLine(screen, float32(m.posX), float32(m.posY), float32(m.posX), float32(m.posY+m.height), 1, m.borderColor, false)
 	vector.StrokeLine(screen, float32(m.posX+m.width), float32(m.posY), float32(m.posX+m.width), float32(m.posY+m.height), 1, m.borderColor, false)
-}
 
-func (m *Minimap) drawTerrain(screen *ebiten.Image) {
+	// Calculate dimensions and scaling
 	terrainWidth := m.terrain.width
+	screenWidth := float64(screen.Bounds().Dx())
+
+	// Calculate scaling factors for minimap
 	scaleX := float64(m.width) / terrainWidth
 
+	// Find max height for Y-scaling
 	maxHeight := 0.0
 	for _, h := range m.terrain.points {
 		if h > maxHeight {
 			maxHeight = h
 		}
 	}
+	scaleY := float64(m.height) / (maxHeight * 1.2) // Scale to fit with some margin
 
-	scaleY := scaleX
-
-	yOffset := float64(m.posY) + float64(m.height)*0.9 - maxHeight*scaleY/2
-
+	// Get normalized camera position
 	cameraX := m.camera.X
 	for cameraX < 0 {
 		cameraX += terrainWidth
@@ -68,58 +70,59 @@ func (m *Minimap) drawTerrain(screen *ebiten.Image) {
 		cameraX -= terrainWidth
 	}
 
-	pointSpacing := 5.0
-
-	for worldX := 0.0; worldX < terrainWidth; worldX += pointSpacing {
-		screenX := (worldX * scaleX)
-
-		index := int(worldX / pointSpacing)
-		nextIndex := (index + 1) % len(m.terrain.points)
-
-		if index >= 0 && index < len(m.terrain.points) {
-			height := m.terrain.points[index]
-			nextHeight := m.terrain.points[nextIndex]
-
-			y1 := yOffset - height*scaleY
-			y2 := yOffset - nextHeight*scaleY
-			x1 := float64(m.posX) + screenX
-			x2 := float64(m.posX) + screenX + (pointSpacing * scaleX)
-
-			vector.StrokeLine(screen, float32(x1), float32(y1), float32(x2), float32(y2), 1, m.terrainColor, false)
-		}
-	}
-}
-
-func (m *Minimap) drawViewport(screen *ebiten.Image) {
-	terrainWidth := m.terrain.width
-	scaleX := float64(m.width) / terrainWidth
-
-	cameraX := m.camera.X
-	for cameraX < 0 {
-		cameraX += terrainWidth
-	}
-	for cameraX >= terrainWidth {
-		cameraX -= terrainWidth
-	}
-
-	screenWidth := m.camera.Width
+	// Calculate viewport width in minimap space - represents one screen's worth
 	viewportWidth := int((screenWidth / terrainWidth) * float64(m.width))
 
-	viewportPosition := float64(m.posX) + cameraX*scaleX
+	// Position viewport indicator based on camera position
+	viewportPosition := float64(cameraX) / terrainWidth
+	viewportX := m.posX + int(float64(m.width)*viewportPosition) - viewportWidth/2
 
-	viewportX := int(viewportPosition)
-
+	// Ensure viewport indicator wraps properly
 	if viewportX < m.posX {
-		viewportX = m.posX
+		viewportX += m.width
 	}
 	if viewportX+viewportWidth > m.posX+m.width {
-		if cameraX > terrainWidth-screenWidth {
-			viewportX = m.posX + int((terrainWidth-screenWidth)*scaleX)
-		} else {
-			viewportX = m.posX
-		}
+		viewportX -= m.width
 	}
 
+	// Draw all terrain points using same pointSpacing as in terrain.Draw
+	pointSpacing := 5.0
+	lastX := -1.0
+	lastY := -1.0
+
+	// Draw all terrain points for all 3 screens
+	for i := 0; i < len(m.terrain.points); i++ {
+		// Convert world position to minimap position
+		worldX := float64(i) * pointSpacing
+		minimapX := m.posX + int(worldX*scaleX)%m.width
+
+		// Calculate height at this point
+		height := m.terrain.points[i]
+		minimapY := m.posY + m.height - int(height*scaleY)
+
+		// Ensure Y stays within minimap bounds
+		if minimapY < m.posY {
+			minimapY = m.posY
+		}
+
+		// Draw line segment if not the first point and not wrapping around edge
+		if lastX >= 0 {
+			// Check if points are close enough to be connected (avoid wrap lines)
+			if abs(minimapX-int(lastX)) < m.width/2 {
+				vector.StrokeLine(
+					screen,
+					float32(lastX), float32(lastY),
+					float32(minimapX), float32(minimapY),
+					1, m.terrainColor, false,
+				)
+			}
+		}
+
+		lastX = float64(minimapX)
+		lastY = float64(minimapY)
+	}
+
+	// Draw the viewport indicator (white rectangle)
 	vector.StrokeLine(
 		screen,
 		float32(viewportX), float32(m.posY),
@@ -146,10 +149,10 @@ func (m *Minimap) drawViewport(screen *ebiten.Image) {
 	)
 }
 
-func (m *Minimap) Draw(screen *ebiten.Image) {
-	m.drawBorder(screen)
-	m.drawTerrain(screen)
-	m.drawViewport(screen)
+// Helper function for absolute value
+func abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
 }
-
-

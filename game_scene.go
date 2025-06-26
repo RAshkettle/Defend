@@ -38,6 +38,7 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 
 	screen.DrawImage(g.player.Image, op)
 
+	// Draw the minimap overlay
 	g.minimap.Draw(screen)
 }
 
@@ -57,7 +58,7 @@ func NewGameScene(sm *SceneManager) *GameScene {
 		terrain:      terrain,
 	}
 
-
+	// Initialize minimap after terrain and camera are created
 	game.minimap = NewMinimap(terrain, camera, int(width), int(height))
 
 	return game
