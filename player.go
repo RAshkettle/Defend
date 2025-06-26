@@ -30,12 +30,12 @@ func NewPlayer() *Player {
 }
 
 func (p *Player) Update(camera *Camera, terrainWidth float64) error {
-	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA){
+	if ebiten.IsKeyPressed(ebiten.KeyLeft) || ebiten.IsKeyPressed(ebiten.KeyA) {
 		camera.MoveLeft(terrainWidth)
 		p.Facing = LEFT
 	}
 
-	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD){
+	if ebiten.IsKeyPressed(ebiten.KeyRight) || ebiten.IsKeyPressed(ebiten.KeyD) {
 		camera.MoveRight(terrainWidth)
 		p.Facing = RIGHT
 	}

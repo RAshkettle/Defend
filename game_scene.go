@@ -11,6 +11,7 @@ type GameScene struct {
 	player       *Player
 	camera       *Camera
 	terrain      *Terrain
+	minimap      *Minimap
 }
 
 func (g *GameScene) Update() error {
@@ -36,6 +37,8 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 	op.GeoM.Translate(g.player.X, g.player.Y)
 
 	screen.DrawImage(g.player.Image, op)
+
+	g.minimap.Draw(screen)
 }
 
 func (g *GameScene) Layout(outerWidth, outerHeight int) (int, int) {
@@ -53,5 +56,9 @@ func NewGameScene(sm *SceneManager) *GameScene {
 		camera:       camera,
 		terrain:      terrain,
 	}
+
+
+	game.minimap = NewMinimap(terrain, camera, int(width), int(height))
+
 	return game
 }
