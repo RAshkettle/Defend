@@ -19,9 +19,6 @@ var AudioContext = audio.NewContext(44100)
 
 var LaserSound = loadPlayerFromWav("audio/laser.wav", 0.3)
 
-
-
-
 func loadImage(filePath string) *ebiten.Image {
 	data, err := assets.ReadFile(filePath)
 	if err != nil {

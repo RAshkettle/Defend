@@ -19,7 +19,7 @@ func (g *GameScene) Update() error {
 	if err := g.player.Update(g.camera, float64(g.terrain.width)); err != nil {
 		return err
 	}
-	
+
 	// Check for alien spawning
 	g.aliens = CheckAlienSpawn(g.aliens, g.terrain.width)
 
@@ -30,12 +30,12 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
 
 	g.terrain.Draw(screen, g.camera)
-	
+
 	// Draw aliens
 	for _, alien := range g.aliens {
 		alien.Draw(screen, g.camera, g.terrain.width)
 	}
-	
+
 	// Draw lasers
 	for _, laser := range g.player.ActiveShots {
 		laser.Draw(screen, g.camera)

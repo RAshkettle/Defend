@@ -83,7 +83,7 @@ func (p *Player) Update(camera *Camera, terrainWidth float64) error {
 			worldX := p.X + camera.X + 16
 			laser := NewLaser(worldX, p.Y+6, p.Facing)
 			p.ActiveShots = append(p.ActiveShots, laser)
-			
+
 			// Play laser sound
 			assets.LaserSound.Rewind()
 			assets.LaserSound.Play()
