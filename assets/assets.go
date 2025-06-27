@@ -14,6 +14,7 @@ import (
 var assets embed.FS
 
 var PlayerSprite = loadImage("sprites/player.png")
+var AlienSprite = loadImage("sprites/alien.png")
 var AudioContext = audio.NewContext(44100)
 
 var LaserSound = loadPlayerFromWav("audio/laser.wav", 0.3)
