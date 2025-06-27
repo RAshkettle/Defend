@@ -19,40 +19,26 @@ func (g *GameScene) Update() error {
 	if err := g.player.Update(g.camera, float64(g.terrain.width)); err != nil {
 		return err
 	}
-
-	// Check for alien spawning
 	g.aliens = CheckAlienSpawn(g.aliens, g.terrain.width)
-
 	return nil
 }
 
 func (g *GameScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
-
 	g.terrain.Draw(screen, g.camera)
-
-	// Draw aliens
 	for _, alien := range g.aliens {
 		alien.Draw(screen, g.camera, g.terrain.width)
 	}
-
-	// Draw lasers
 	for _, laser := range g.player.ActiveShots {
 		laser.Draw(screen, g.camera)
 	}
-
 	op := &ebiten.DrawImageOptions{}
-
 	if g.player.Facing == LEFT {
 		op.GeoM.Scale(-1, 1)
 		op.GeoM.Translate(float64(g.player.Image.Bounds().Dx()), 0)
 	}
-
 	op.GeoM.Translate(g.player.X, g.player.Y)
-
 	screen.DrawImage(g.player.Image, op)
-
-	// Draw the minimap overlay
 	g.minimap.Draw(screen, g.aliens)
 }
 
@@ -64,7 +50,6 @@ func NewGameScene(sm *SceneManager) *GameScene {
 	width, height := 320.0, 240.0
 	camera := NewCamera(width, height)
 	terrain := NewTerrain(width)
-
 	game := &GameScene{
 		sceneManager: sm,
 		player:       NewPlayer(),
@@ -72,9 +57,6 @@ func NewGameScene(sm *SceneManager) *GameScene {
 		terrain:      terrain,
 		aliens:       []*Alien{},
 	}
-
-	// Initialize minimap after terrain and camera are created
 	game.minimap = NewMinimap(terrain, camera, int(width), int(height))
-
 	return game
 }

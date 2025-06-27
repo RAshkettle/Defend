@@ -24,7 +24,6 @@ func NewMinimap(terrain *Terrain, camera *Camera, screenWidth, screenHeight int)
 	minimapHeight := 20
 	minimapX := (screenWidth - minimapWidth) / 2
 	minimapY := 5
-
 	return &Minimap{
 		terrain:       terrain,
 		camera:        camera,
@@ -32,28 +31,27 @@ func NewMinimap(terrain *Terrain, camera *Camera, screenWidth, screenHeight int)
 		height:        minimapHeight,
 		posX:          minimapX,
 		posY:          minimapY,
-		terrainColor:  color.RGBA{255, 140, 0, 255},   // Orange terrain
-		viewportColor: color.RGBA{255, 255, 255, 255}, // White viewport indicator
-		borderColor:   color.RGBA{0, 0, 255, 255},     // Blue border
+		terrainColor:  color.RGBA{255, 140, 0, 255},
+		viewportColor: color.RGBA{255, 255, 255, 255},
+		borderColor:   color.RGBA{0, 0, 255, 255},
 	}
 }
 
 func (m *Minimap) Draw(screen *ebiten.Image, aliens []*Alien) {
-	// Draw blue border around minimap
 	vector.StrokeLine(screen, float32(m.posX), float32(m.posY), float32(m.posX+m.width), float32(m.posY), 1, m.borderColor, false)
 	vector.StrokeLine(screen, float32(m.posX), float32(m.posY+m.height), float32(m.posX+m.width), float32(m.posY+m.height), 1, m.borderColor, false)
 	vector.StrokeLine(screen, float32(m.posX), float32(m.posY), float32(m.posX), float32(m.posY+m.height), 1, m.borderColor, false)
 	vector.StrokeLine(screen, float32(m.posX+m.width), float32(m.posY), float32(m.posX+m.width), float32(m.posY+m.height), 1, m.borderColor, false)
 
-	// Calculate dimensions and scaling
 	terrainWidth := m.terrain.width
 	screenWidth := float64(screen.Bounds().Dx())
-
-	// Calculate scaling factors for minimap
-	scaleX := float64(m.width) / terrainWidth
-	scaleY := float64(m.height) / m.camera.Height // Match main view's Y scaling
-
-	// Get normalized camera position
+	maxHeight := 0.0
+	for _, h := range m.terrain.points {
+		if h > maxHeight {
+			maxHeight = h
+		}
+	}
+	scaleY := float64(m.height) / (maxHeight * 1.2)
 	cameraX := m.camera.X
 	for cameraX < 0 {
 		cameraX += terrainWidth
@@ -61,68 +59,112 @@ func (m *Minimap) Draw(screen *ebiten.Image, aliens []*Alien) {
 	for cameraX >= terrainWidth {
 		cameraX -= terrainWidth
 	}
-
-	// Calculate viewport width in minimap space - represents one screen's worth
 	viewportWidth := int((screenWidth / terrainWidth) * float64(m.width))
-
-	// Position the viewport indicator based on the camera's left edge
 	viewportPosition := float64(cameraX) / terrainWidth
-	viewportX := m.posX + int(float64(m.width)*viewportPosition)
-
-	// Draw all terrain points using same pointSpacing as in terrain.Draw
+	viewportX := m.posX + int(float64(m.width)*viewportPosition) - viewportWidth/2
+	if viewportX < m.posX {
+		viewportX += m.width
+	}
+	if viewportX+viewportWidth > m.posX+m.width {
+		viewportX -= m.width
+	}
 	pointSpacing := 5.0
-	lastX := -1.0
-	lastY := -1.0
-
-	// Draw all terrain points for all 3 screens
-	for i := 0; i < len(m.terrain.points); i++ {
-		// Convert world position to minimap position
-		worldX := float64(i) * pointSpacing
-		minimapX := m.posX + int(worldX*scaleX)
-
-		// Calculate height at this point
-		height := m.terrain.points[i]
-		minimapY := m.posY + m.height - int(height*scaleY)
-
-		// Draw line segment if not the first point and not wrapping around edge
-		if lastX >= 0 {
+	minimapScale := float64(m.width) / terrainWidth
+	for minimapX := 0; minimapX < m.width-1; minimapX++ {
+		worldX := float64(minimapX) / minimapScale
+		index := int(worldX/pointSpacing) % len(m.terrain.points)
+		nextIndex := (index + 1) % len(m.terrain.points)
+		if index >= 0 && index < len(m.terrain.points) {
+			height := m.terrain.points[index]
+			nextHeight := m.terrain.points[nextIndex]
+			y1 := m.posY + m.height - int(height*scaleY)
+			y2 := m.posY + m.height - int(nextHeight*scaleY)
+			if y1 < m.posY {
+				y1 = m.posY
+			}
+			if y1 > m.posY+m.height {
+				y1 = m.posY + m.height
+			}
+			if y2 < m.posY {
+				y2 = m.posY
+			}
+			if y2 > m.posY+m.height {
+				y2 = m.posY + m.height
+			}
 			vector.StrokeLine(
 				screen,
-				float32(lastX), float32(lastY),
-				float32(minimapX), float32(minimapY),
+				float32(m.posX+minimapX), float32(y1),
+				float32(m.posX+minimapX+1), float32(y2),
 				1, m.terrainColor, false,
 			)
 		}
-
-		lastX = float64(minimapX)
-		lastY = float64(minimapY)
 	}
-
-	// Draw aliens as dots
+	alienColor := color.RGBA{255, 255, 255, 255}
 	for _, alien := range aliens {
-		minimapAlienX := m.posX + int(alien.X*scaleX)
-		minimapAlienY := m.posY + int(alien.Y*scaleY)
-
-		// Ensure the dot is within the minimap bounds before drawing
-		if minimapAlienX >= m.posX && minimapAlienX < m.posX+m.width &&
-			minimapAlienY >= m.posY && minimapAlienY < m.posY+m.height {
-			// Draw a 1x1 pixel dot
-			screen.Set(minimapAlienX, minimapAlienY, color.RGBA{255, 255, 255, 255})
+		if alien.Active {
+			alienWorldX := alien.X
+			for alienWorldX < 0 {
+				alienWorldX += terrainWidth
+			}
+			for alienWorldX >= terrainWidth {
+				alienWorldX -= terrainWidth
+			}
+			alienPosition := float64(alienWorldX) / terrainWidth
+			alienMinimapX := m.posX + int(float64(m.width)*alienPosition)
+			if alienMinimapX < m.posX {
+				alienMinimapX += m.width
+			}
+			if alienMinimapX >= m.posX+m.width {
+				alienMinimapX -= m.width
+			}
+			alienMinimapY := m.posY + m.height - int(alien.Y*scaleY) - 2
+			if alienMinimapY < m.posY {
+				alienMinimapY = m.posY
+			}
+			if alienMinimapY > m.posY+m.height {
+				alienMinimapY = m.posY + m.height
+			}
+			vector.StrokeLine(
+				screen,
+				float32(alienMinimapX),
+				float32(alienMinimapY),
+				float32(alienMinimapX+1),
+				float32(alienMinimapY),
+				1,
+				alienColor,
+				false,
+			)
 		}
 	}
+	vector.StrokeLine(
+		screen,
+		float32(viewportX), float32(m.posY),
+		float32(viewportX+viewportWidth), float32(m.posY),
+		2, m.viewportColor, false,
+	)
+	vector.StrokeLine(
+		screen,
+		float32(viewportX), float32(m.posY+m.height),
+		float32(viewportX+viewportWidth), float32(m.posY+m.height),
+		2, m.viewportColor, false,
+	)
+	vector.StrokeLine(
+		screen,
+		float32(viewportX), float32(m.posY),
+		float32(viewportX), float32(m.posY+m.height),
+		2, m.viewportColor, false,
+	)
+	vector.StrokeLine(
+		screen,
+		float32(viewportX+viewportWidth), float32(m.posY),
+		float32(viewportX+viewportWidth), float32(m.posY+m.height),
+		2, m.viewportColor, false,
+	)
+}
 
-	// Draw the viewport indicator, handling wrapping by drawing two boxes if needed.
-	if viewportX+viewportWidth > m.posX+m.width {
-		// --- View is wrapped, draw two boxes ---
-		// 1. Draw the part on the right edge of the minimap
-		part1Width := (m.posX + m.width) - viewportX
-		vector.StrokeRect(screen, float32(viewportX), float32(m.posY), float32(part1Width), float32(m.height), 2, m.viewportColor, false)
-
-		// 2. Draw the part on the left edge of the minimap
-		part2Width := (viewportX + viewportWidth) - (m.posX + m.width)
-		vector.StrokeRect(screen, float32(m.posX), float32(m.posY), float32(part2Width), float32(m.height), 2, m.viewportColor, false)
-	} else {
-		// --- View is not wrapped, draw a single box ---
-		vector.StrokeRect(screen, float32(viewportX), float32(m.posY), float32(viewportWidth), float32(m.height), 2, m.viewportColor, false)
+func abs(x int) int {
+	if x < 0 {
+		return -x
 	}
+	return x
 }
