@@ -4,6 +4,7 @@ import (
 	"defend/assets"
 
 	"github.com/hajimehoshi/ebiten/v2"
+	"github.com/hajimehoshi/ebiten/v2/inpututil"
 )
 
 type FACING int
@@ -13,24 +14,25 @@ const (
 	LEFT
 )
 
-// Movement constants
 const (
 	PLAYER_MOVE_SPEED = 0.1
 )
 
 type Player struct {
-	X      float64
-	Y      float64
-	Image  *ebiten.Image
-	Facing FACING
+	X           float64
+	Y           float64
+	Image       *ebiten.Image
+	Facing      FACING
+	ActiveShots []*Laser
 }
 
 func NewPlayer() *Player {
 	return &Player{
-		Image:  assets.PlayerSprite,
-		X:      150.0,
-		Y:      100.0,
-		Facing: RIGHT,
+		Image:       assets.PlayerSprite,
+		X:           150.0,
+		Y:           100.0,
+		Facing:      RIGHT,
+		ActiveShots: make([]*Laser, 0),
 	}
 }
 
@@ -74,6 +76,27 @@ func (p *Player) Update(camera *Camera, terrainWidth float64) error {
 
 	distToTarget := targetX - p.X
 	p.X += distToTarget * PLAYER_MOVE_SPEED
+
+	if inpututil.IsKeyJustPressed(ebiten.KeySpace) {
+		if len(p.ActiveShots) < 3 {
+			// Convert player screen position to world position for laser spawning
+			worldX := p.X + camera.X + 16
+			laser := NewLaser(worldX, p.Y+6, p.Facing)
+			p.ActiveShots = append(p.ActiveShots, laser)
+		}
+
+	}
+
+	for _, laser := range p.ActiveShots {
+		laser.Update()
+	}
+	activeLasers := make([]*Laser, 0)
+	for _, laser := range p.ActiveShots {
+		if laser.Active {
+			activeLasers = append(activeLasers, laser)
+		}
+	}
+	p.ActiveShots = activeLasers
 
 	return nil
 }

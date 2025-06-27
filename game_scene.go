@@ -26,6 +26,9 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 	screen.Fill(color.Black)
 
 	g.terrain.Draw(screen, g.camera)
+	for _, laser := range g.player.ActiveShots {
+		laser.Draw(screen, g.camera)
+	}
 
 	op := &ebiten.DrawImageOptions{}
 
