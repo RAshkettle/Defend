@@ -53,7 +53,7 @@ func (g *GameScene) Draw(screen *ebiten.Image) {
 	screen.DrawImage(g.player.Image, op)
 
 	// Draw the minimap overlay
-	g.minimap.Draw(screen)
+	g.minimap.Draw(screen, g.aliens)
 }
 
 func (g *GameScene) Layout(outerWidth, outerHeight int) (int, int) {

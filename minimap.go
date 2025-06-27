@@ -38,7 +38,7 @@ func NewMinimap(terrain *Terrain, camera *Camera, screenWidth, screenHeight int)
 	}
 }
 
-func (m *Minimap) Draw(screen *ebiten.Image) {
+func (m *Minimap) Draw(screen *ebiten.Image, aliens []*Alien) {
 	// Draw blue border around minimap
 	vector.StrokeLine(screen, float32(m.posX), float32(m.posY), float32(m.posX+m.width), float32(m.posY), 1, m.borderColor, false)
 	vector.StrokeLine(screen, float32(m.posX), float32(m.posY+m.height), float32(m.posX+m.width), float32(m.posY+m.height), 1, m.borderColor, false)
@@ -96,6 +96,19 @@ func (m *Minimap) Draw(screen *ebiten.Image) {
 
 		lastX = float64(minimapX)
 		lastY = float64(minimapY)
+	}
+
+	// Draw aliens as dots
+	for _, alien := range aliens {
+		minimapAlienX := m.posX + int(alien.X*scaleX)
+		minimapAlienY := m.posY + int(alien.Y*scaleY)
+
+		// Ensure the dot is within the minimap bounds before drawing
+		if minimapAlienX >= m.posX && minimapAlienX < m.posX+m.width &&
+			minimapAlienY >= m.posY && minimapAlienY < m.posY+m.height {
+			// Draw a 1x1 pixel dot
+			screen.Set(minimapAlienX, minimapAlienY, color.RGBA{255, 255, 255, 255})
+		}
 	}
 
 	// Draw the viewport indicator, handling wrapping by drawing two boxes if needed.
