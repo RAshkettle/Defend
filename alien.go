@@ -2,41 +2,66 @@ package main
 
 import (
 	"defend/assets"
+	"math"
 	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
 
+const (
+	alienVerticalRange = 210.0 - 40.0
+	alienAmplitude     = alienVerticalRange / 2
+	alienBaseY         = 40.0 + alienAmplitude
+	alienFrequency     = (2 * math.Pi) / 320 
+)
+
 type Alien struct {
-	X      float64
-	Y      float64
-	Image  *ebiten.Image
-	Active bool
+	X         float64
+	Y         float64
+	Image     *ebiten.Image
+	Active    bool
+	Facing	FACING 
 }
 
-func NewAlien(x, y float64) *Alien {
-	return &Alien{
-		X:      x,
-		Y:      y,
-		Image:  assets.AlienSprite,
-		Active: true,
+func GetDirectionFromFacing(facing FACING) float64 {
+	if facing == RIGHT {
+		return 1.0
 	}
+	return -1.0
+}
+
+func NewAlien(x float64) *Alien {
+	facing := RIGHT 
+	if rand.Float64() < 0.5 {
+		facing = LEFT
+	}
+	// Calculate initial Y based on X
+	y := alienBaseY + math.Sin(x*alienFrequency)*alienAmplitude
+	return &Alien{
+		X:         x,
+		Y:         y,
+		Image:     assets.AlienSprite,
+		Active:    true,
+		Facing:    facing,
+	}
+}
+
+func (a *Alien) Update() {
+	speed := 0.75
+	a.X += GetDirectionFromFacing(a.Facing) * speed
+	a.Y = alienBaseY + math.Sin(a.X*alienFrequency)*alienAmplitude
 }
 
 func CheckAlienSpawn(activeAliens []*Alien, terrainWidth float64) []*Alien {
 	if len(activeAliens) < 6 {
 		randomX := rand.Float64() * terrainWidth
-		minY := 40.0
-		maxY := 210.0
-		randomY := minY + rand.Float64()*(maxY-minY)
-		newAlien := NewAlien(randomX, randomY)
+		newAlien := NewAlien(randomX)
 		activeAliens = append(activeAliens, newAlien)
 	}
 	return activeAliens
 }
 
 func (a *Alien) Draw(screen *ebiten.Image, camera *Camera, terrainWidth float64) {
-	// Calculate alien position relative to camera, handling wrapping
 	drawX := a.X - camera.X
 
 	// Handle wrapping - if the alien appears to be very far away due to wrapping,
@@ -47,7 +72,7 @@ func (a *Alien) Draw(screen *ebiten.Image, camera *Camera, terrainWidth float64)
 		drawX += terrainWidth
 	}
 
-	// Only draw if alien is visible on screen (with some margin)
+	// Only draw if alien is visible on screen 
 	if drawX > -50 && drawX < camera.Width+50 {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(drawX, a.Y)

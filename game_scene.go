@@ -19,6 +19,9 @@ func (g *GameScene) Update() error {
 	if err := g.player.Update(g.camera, float64(g.terrain.width)); err != nil {
 		return err
 	}
+	for _, a := range g.aliens {
+		a.Update()
+	}
 	g.aliens = CheckAlienSpawn(g.aliens, g.terrain.width)
 	return nil
 }
