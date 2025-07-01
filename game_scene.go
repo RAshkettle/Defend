@@ -1,6 +1,7 @@
 package main
 
 import (
+	"image"
 	"image/color"
 
 	"github.com/hajimehoshi/ebiten/v2"
@@ -24,9 +25,9 @@ func (g *GameScene) Update() error {
 		a.Update(g.terrain.width)
 	}
 	for _, laser := range g.player.ActiveShots {
-		laser.CheckAlienCollision(g.aliens)
+		laser.CheckAlienCollision(g.aliens, g.terrain.width)
 	}
-	//Clean up any dead aliens
+	// Clean up any dead aliens
 	activeAliens := make([]*Alien, 0)
 	for _, a := range g.aliens {
 		if a.Active {
@@ -36,7 +37,39 @@ func (g *GameScene) Update() error {
 	g.aliens = activeAliens
 
 	g.aliens = CheckAlienSpawn(g.aliens, g.terrain.width)
+	g.CheckPlayerAlienCollision()
 	return nil
+}
+
+func (g *GameScene) CheckPlayerAlienCollision() {
+	playerWorldX := g.player.X + g.camera.X
+	p := image.Rect(int(playerWorldX), int(g.player.Y), int(playerWorldX)+g.player.Image.Bounds().Dx(), int(g.player.Y)+g.player.Image.Bounds().Dy())
+
+	for _, a := range g.aliens {
+		// Check collision at alien's current position
+		alienRect := image.Rect(int(a.X), int(a.Y), int(a.X)+a.Image.Bounds().Dx(), int(a.Y)+a.Image.Bounds().Dy())
+		if alienRect.Overlaps(p) {
+			a.Active = false
+			g.sceneManager.TransitionTo(SceneEndScreen)
+			return
+		}
+
+		// Check collision with alien wrapped to the left
+		wrappedAlienRectLeft := image.Rect(int(a.X-g.terrain.width), int(a.Y), int(a.X-g.terrain.width)+a.Image.Bounds().Dx(), int(a.Y)+a.Image.Bounds().Dy())
+		if wrappedAlienRectLeft.Overlaps(p) {
+			a.Active = false
+			g.sceneManager.TransitionTo(SceneEndScreen)
+			return
+		}
+
+		// Check collision with alien wrapped to the right
+		wrappedAlienRectRight := image.Rect(int(a.X+g.terrain.width), int(a.Y), int(a.X+g.terrain.width)+a.Image.Bounds().Dx(), int(a.Y)+a.Image.Bounds().Dy())
+		if wrappedAlienRectRight.Overlaps(p) {
+			a.Active = false
+			g.sceneManager.TransitionTo(SceneEndScreen)
+			return
+		}
+	}
 }
 
 func (g *GameScene) Draw(screen *ebiten.Image) {

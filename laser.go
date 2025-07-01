@@ -74,34 +74,53 @@ func (l *Laser) Draw(screen *ebiten.Image, camera *Camera) {
 	}
 }
 
-func (l *Laser) CheckAlienCollision(aliens []*Alien) {
-	var startX, endX float64
+func (l *Laser) CheckAlienCollision(aliens []*Alien, terrainWidth float64) {
+	var laserStartX, laserEndX float64
 	if l.Direction == RIGHT {
-		startX = l.X
-		endX = l.X + float64(l.CurrentLength)
+		laserStartX = l.X
+		laserEndX = l.X + float64(l.CurrentLength)
 	} else {
-		startX = l.X - float64(l.CurrentLength)
-		endX = l.X
+		laserStartX = l.X - float64(l.CurrentLength)
+		laserEndX = l.X
 	}
 
-	// Ensure startX is always the smaller value
-	if startX > endX {
-		startX, endX = endX, startX
+	// Ensure laserStartX is always the smaller value
+	if laserStartX > laserEndX {
+		laserStartX, laserEndX = laserEndX, laserStartX
 	}
 
 	for _, alien := range aliens {
-		alienLeft := alien.X
-		alienRight := alien.X + float64(alien.Image.Bounds().Dx())
 		alienTop := alien.Y
 		alienBottom := alien.Y + float64(alien.Image.Bounds().Dy())
 
-		// Check if any part of the laser overlaps with the alien
-		if !(endX < alienLeft || startX > alienRight) &&
+		// Check for collision with the alien at its current position
+		alienLeft := alien.X
+		alienRight := alien.X + float64(alien.Image.Bounds().Dx())
+		if !(laserEndX < alienLeft || laserStartX > alienRight) &&
 			l.Y >= alienTop && l.Y <= alienBottom {
 			l.Active = false
 			alien.Active = false
-			return 
+			return
+		}
+
+		// Check for collision with the alien wrapped around the terrain (left side)
+		wrappedAlienLeft := alien.X - terrainWidth
+		wrappedAlienRight := alien.X - terrainWidth + float64(alien.Image.Bounds().Dx())
+		if !(laserEndX < wrappedAlienLeft || laserStartX > wrappedAlienRight) &&
+			l.Y >= alienTop && l.Y <= alienBottom {
+			l.Active = false
+			alien.Active = false
+			return
+		}
+
+		// Check for collision with the alien wrapped around the terrain (right side)
+		wrappedAlienLeft = alien.X + terrainWidth
+		wrappedAlienRight = alien.X + terrainWidth + float64(alien.Image.Bounds().Dx())
+		if !(laserEndX < wrappedAlienLeft || laserStartX > wrappedAlienRight) &&
+			l.Y >= alienTop && l.Y <= alienBottom {
+			l.Active = false
+			alien.Active = false
+			return
 		}
 	}
-
 }
