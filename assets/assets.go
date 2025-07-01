@@ -18,6 +18,8 @@ var AlienSprite = loadImage("sprites/alien.png")
 var AudioContext = audio.NewContext(44100)
 
 var LaserSound = loadPlayerFromWav("audio/laser.wav", 0.3)
+var PlayerDeathSound = loadPlayerFromWav("audio/playerExplosion.wav", 0.6)
+var AlienDeathSound = loadPlayerFromWav("audio/alienExplosion.wav", 0.3)
 
 func loadImage(filePath string) *ebiten.Image {
 	data, err := assets.ReadFile(filePath)
