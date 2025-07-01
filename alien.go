@@ -12,15 +12,15 @@ const (
 	alienVerticalRange = 210.0 - 40.0
 	alienAmplitude     = alienVerticalRange / 2
 	alienBaseY         = 40.0 + alienAmplitude
-	alienFrequency     = (2 * math.Pi) / 320 
+	alienFrequency     = (2 * math.Pi) / 320
 )
 
 type Alien struct {
-	X         float64
-	Y         float64
-	Image     *ebiten.Image
-	Active    bool
-	Facing	FACING 
+	X      float64
+	Y      float64
+	Image  *ebiten.Image
+	Active bool
+	Facing FACING
 }
 
 func GetDirectionFromFacing(facing FACING) float64 {
@@ -31,25 +31,33 @@ func GetDirectionFromFacing(facing FACING) float64 {
 }
 
 func NewAlien(x float64) *Alien {
-	facing := RIGHT 
+	facing := RIGHT
 	if rand.Float64() < 0.5 {
 		facing = LEFT
 	}
 	// Calculate initial Y based on X
 	y := alienBaseY + math.Sin(x*alienFrequency)*alienAmplitude
 	return &Alien{
-		X:         x,
-		Y:         y,
-		Image:     assets.AlienSprite,
-		Active:    true,
-		Facing:    facing,
+		X:      x,
+		Y:      y,
+		Image:  assets.AlienSprite,
+		Active: true,
+		Facing: facing,
 	}
 }
 
-func (a *Alien) Update() {
+func (a *Alien) Update(terrainWidth float64) {
 	speed := 0.75
 	a.X += GetDirectionFromFacing(a.Facing) * speed
 	a.Y = alienBaseY + math.Sin(a.X*alienFrequency)*alienAmplitude
+
+	// Wrap alien.X to stay within terrain boundaries
+	for a.X < 0 {
+		a.X += terrainWidth
+	}
+	for a.X >= terrainWidth {
+		a.X -= terrainWidth
+	}
 }
 
 func CheckAlienSpawn(activeAliens []*Alien, terrainWidth float64) []*Alien {
@@ -62,6 +70,10 @@ func CheckAlienSpawn(activeAliens []*Alien, terrainWidth float64) []*Alien {
 }
 
 func (a *Alien) Draw(screen *ebiten.Image, camera *Camera, terrainWidth float64) {
+	if !a.Active {
+		return
+	}
+
 	drawX := a.X - camera.X
 
 	// Handle wrapping - if the alien appears to be very far away due to wrapping,
@@ -72,7 +84,7 @@ func (a *Alien) Draw(screen *ebiten.Image, camera *Camera, terrainWidth float64)
 		drawX += terrainWidth
 	}
 
-	// Only draw if alien is visible on screen 
+	// Only draw if alien is visible on screen
 	if drawX > -50 && drawX < camera.Width+50 {
 		op := &ebiten.DrawImageOptions{}
 		op.GeoM.Translate(drawX, a.Y)

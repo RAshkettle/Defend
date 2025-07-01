@@ -73,3 +73,35 @@ func (l *Laser) Draw(screen *ebiten.Image, camera *Camera) {
 		)
 	}
 }
+
+func (l *Laser) CheckAlienCollision(aliens []*Alien) {
+	var startX, endX float64
+	if l.Direction == RIGHT {
+		startX = l.X
+		endX = l.X + float64(l.CurrentLength)
+	} else {
+		startX = l.X - float64(l.CurrentLength)
+		endX = l.X
+	}
+
+	// Ensure startX is always the smaller value
+	if startX > endX {
+		startX, endX = endX, startX
+	}
+
+	for _, alien := range aliens {
+		alienLeft := alien.X
+		alienRight := alien.X + float64(alien.Image.Bounds().Dx())
+		alienTop := alien.Y
+		alienBottom := alien.Y + float64(alien.Image.Bounds().Dy())
+
+		// Check if any part of the laser overlaps with the alien
+		if !(endX < alienLeft || startX > alienRight) &&
+			l.Y >= alienTop && l.Y <= alienBottom {
+			l.Active = false
+			alien.Active = false
+			return 
+		}
+	}
+
+}
