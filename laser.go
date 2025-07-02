@@ -1,6 +1,7 @@
 package main
 
 import (
+	"defend/assets"
 	"image/color"
 	"math/rand"
 
@@ -100,6 +101,8 @@ func (l *Laser) CheckAlienCollision(aliens []*Alien, terrainWidth float64) {
 			l.Y >= alienTop && l.Y <= alienBottom {
 			l.Active = false
 			alien.Active = false
+			assets.AlienDeathSound.Rewind()
+			assets.AlienDeathSound.Play()
 			return
 		}
 
@@ -110,6 +113,8 @@ func (l *Laser) CheckAlienCollision(aliens []*Alien, terrainWidth float64) {
 			l.Y >= alienTop && l.Y <= alienBottom {
 			l.Active = false
 			alien.Active = false
+			assets.AlienDeathSound.Rewind()
+			assets.AlienDeathSound.Play()
 			return
 		}
 
@@ -120,6 +125,8 @@ func (l *Laser) CheckAlienCollision(aliens []*Alien, terrainWidth float64) {
 			l.Y >= alienTop && l.Y <= alienBottom {
 			l.Active = false
 			alien.Active = false
+			assets.AlienDeathSound.Rewind()
+			assets.AlienDeathSound.Play()
 			return
 		}
 	}

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"defend/assets"
 	"image"
 	"image/color"
 
@@ -50,6 +51,8 @@ func (g *GameScene) CheckPlayerAlienCollision() {
 		alienRect := image.Rect(int(a.X), int(a.Y), int(a.X)+a.Image.Bounds().Dx(), int(a.Y)+a.Image.Bounds().Dy())
 		if alienRect.Overlaps(p) {
 			a.Active = false
+			assets.PlayerDeathSound.Rewind()
+			assets.PlayerDeathSound.Play()
 			g.sceneManager.TransitionTo(SceneEndScreen)
 			return
 		}
@@ -58,6 +61,8 @@ func (g *GameScene) CheckPlayerAlienCollision() {
 		wrappedAlienRectLeft := image.Rect(int(a.X-g.terrain.width), int(a.Y), int(a.X-g.terrain.width)+a.Image.Bounds().Dx(), int(a.Y)+a.Image.Bounds().Dy())
 		if wrappedAlienRectLeft.Overlaps(p) {
 			a.Active = false
+			assets.PlayerDeathSound.Rewind()
+			assets.PlayerDeathSound.Play()
 			g.sceneManager.TransitionTo(SceneEndScreen)
 			return
 		}
@@ -66,6 +71,8 @@ func (g *GameScene) CheckPlayerAlienCollision() {
 		wrappedAlienRectRight := image.Rect(int(a.X+g.terrain.width), int(a.Y), int(a.X+g.terrain.width)+a.Image.Bounds().Dx(), int(a.Y)+a.Image.Bounds().Dy())
 		if wrappedAlienRectRight.Overlaps(p) {
 			a.Active = false
+			assets.PlayerDeathSound.Rewind()
+			assets.PlayerDeathSound.Play()
 			g.sceneManager.TransitionTo(SceneEndScreen)
 			return
 		}
